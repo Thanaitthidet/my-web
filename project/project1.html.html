@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ระบบเช็คชื่อเข้าเรียน</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    .status-select { width: 100%; }
+    #reader { width: 300px; margin-top: 20px; }
+  </style>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+
+  <h1>ระบบเช็คชื่อเข้าเรียน</h1>
+
+  <button onclick="startScan()">📷 สแกน QR Code</button>
+  <div id="reader"></div>
+  <p id="scan-result"></p>
+
+  <table id="attendanceTable">
+    <thead>
+      <tr>
+        <th>รหัสนักศึกษา</th>
+        <th>ชื่อ-สกุล</th>
+        <th>สถานะ</th>
+        <th>คะแนน</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button onclick="saveData()">บันทึกข้อมูล</button>
+
+  <script>
+    const students = [
+      { id: '650001', name: 'สมชาย ใจดี' },
+      { id: '650002', name: 'สมหญิง รักเรียน' },
+      { id: '650003', name: 'อนันต์ ขยันมาก' }
+    ];
+
+    const defaultScores = {
+      present: 1,
+      absent: 0,
+      leave: 0.5,
+      late: 0.5
+    };
+
+    function createTable() {
+      const tbody = document.querySelector('#attendanceTable tbody');
+      tbody.innerHTML = '';
+      students.forEach(stu => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${stu.id}</td>
+          <td>${stu.name}</td>
+          <td>
+            <select class="status-select" onchange="updateScore(this)">
+              <option value="present" selected>มาเรียน</option>
+              <option value="absent">ขาด</option>
+              <option value="leave">ลา</option>
+              <option value="late">มาสาย</option>
+            </select>
+          </td>
+          <td class="score">${defaultScores.present}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateScore(selectEl) {
+      const status = selectEl.value;
+      const scoreCell = selectEl.closest('tr').querySelector('.score');
+      scoreCell.textContent = defaultScores[status];
+    }
+
+    function saveData() {
+      const rows = document.querySelectorAll('#attendanceTable tbody tr');
+      const result = [];
+      rows.forEach(row => {
+        const id = row.cells[0].textContent;
+        const name = row.cells[1].textContent;
+        const status = row.querySelector('.status-select').value;
+        const score = parseFloat(row.querySelector('.score').textContent);
+        result.push({ id, name, status, score });
+      });
+      console.log('บันทึกข้อมูล:', result);
+      alert('บันทึกข้อมูลเรียบร้อย (ดูใน console)');
+    }
+
+    function startScan() {
+      const html5QrCode = new Html5Qrcode("reader");
+      const config = { fps: 10, qrbox: 250 };
+
+      html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        qrCodeMessage => {
+          document.getElementById("scan-result").innerText = "QR Code: " + qrCodeMessage;
+          html5QrCode.stop();
+        },
+        errorMessage => {}
+      ).catch(err => {
+        console.error("ไม่สามารถเปิดกล้องได้:", err);
+      });
+    }
+
+    createTable();
+  </script>
+
+</body>
+</html>
